@@ -1,0 +1,17 @@
+[
+  {
+    "email": "admin@gmail.com",
+    "role": "admin",
+    "password": "admin_1234"
+  },
+  {
+    "email": "isoxon@gmail.com",
+    "role": "admin",
+    "password": "admin_1234"
+  },
+  {
+    "email": "javoxir@gmail.com",
+    "role": "admin",
+    "password": "admin_1234"
+  }
+]
