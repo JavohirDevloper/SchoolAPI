@@ -71,27 +71,31 @@ const getCarouselById = async (req, res) => {
 };
 
 const updateCarousel = async (req, res) => {
-  const { id } = req.params;
-  const { title } = req.body;
-
-  try {
-    const oldCarousel = await prisma.carousel.findUnique({
-      where: { id: Number(id) },
-    });
-
-    if (!oldCarousel) {
-      return res.status(404).json({ error: "Carousel not found" });
+  upload(req, res, async function (err) {
+    if (err) {
+      return res.status(500).json({ error: "Error uploading file" });
     }
 
-    const carouselData = {
-      title: title || oldCarousel.title,
-      imageUrl: oldCarousel.imageUrl,
-    };
+    const { id } = req.params;
+    const { title } = req.body;
 
-    if (req.file) {
-      const imageUrl = `/carousel/${req.file.filename}`;
+    try {
+      const oldCarousel = await prisma.carousel.findUnique({
+        where: { id: Number(id) },
+      });
 
-      if (oldCarousel.imageUrl) {
+      if (!oldCarousel) {
+        return res.status(404).json({ error: "Carousel not found" });
+      }
+
+      const carouselData = {
+        title: title || oldCarousel.title,
+        imageUrl: oldCarousel.imageUrl,
+      };
+
+      if (req.file) {
+        const newImageUrl = `/carousel/${req.file.filename}`;
+
         const oldImagePath = path.join(
           __dirname,
           "../../public/carousel",
@@ -101,23 +105,24 @@ const updateCarousel = async (req, res) => {
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
+        carouselData.imageUrl = newImageUrl;
       }
-      carouselData.imageUrl = imageUrl;
-    }
+      const updatedCarousel = await prisma.carousel.update({
+        where: { id: Number(id) },
+        data: carouselData,
+      });
 
-    const updatedCarousel = await prisma.carousel.update({
-      where: { id: Number(id) },
-      data: carouselData,
-    });
-    res.json({
-      message: "Carousel updated successfully",
-      updatedCarousel,
-    });
-  } catch (error) {
-    res.status(500).json({
-      error: "Error updating the carousel",
-    });
-  }
+      res.json({
+        message: "Carousel updated successfully",
+        updatedCarousel,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error updating the carousel",
+        details: error.message,
+      });
+    }
+  });
 };
 
 const deleteCarousel = async (req, res) => {

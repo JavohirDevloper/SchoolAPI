@@ -64,47 +64,57 @@ const getAboutById = async (req, res) => {
 };
 
 const updateAbout = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const oldAbout = await prisma.about.findUnique({
-      where: { id: Number(id) },
-    });
-
-    if (!oldAbout) {
-      return res.status(404).json({ error: "About page not found" });
+  upload(req, res, async function (err) {
+    if (err) {
+      return res.status(500).json({ error: "Error uploading file" });
     }
 
-    const aboutData = {
-      images: oldAbout.images,
-    };
+    const { id } = req.params;
 
-    if (req.file) {
-      const images = `/images/${req.file.filename}`;
-      if (oldAbout.images) {
+    try {
+      const oldAbout = await prisma.about.findUnique({
+        where: { id: Number(id) },
+      });
+
+      if (!oldAbout) {
+        return res.status(404).json({ error: "About page not found" });
+      }
+
+      const aboutData = {
+        images: oldAbout.images,
+      };
+
+      if (req.file) {
+        const newImageUrl = `/images/${req.file.filename}`;
+
         const oldImagePath = path.join(
           __dirname,
           "../../public/images",
           path.basename(oldAbout.images)
         );
+
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
+        aboutData.images = newImageUrl;
       }
-      aboutData.images = images;
+
+      const updatedAbout = await prisma.about.update({
+        where: { id: Number(id) },
+        data: aboutData,
+      });
+
+      res.json({
+        message: "About page updated successfully",
+        updatedAbout,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error updating the About page",
+        details: error.message,
+      });
     }
-
-    const updatedAbout = await prisma.about.update({
-      where: { id: Number(id) },
-      data: aboutData,
-    });
-
-    res.json({
-      message: "About page updated successfully",
-      updatedAbout,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Error updating the About page" });
-  }
+  });
 };
 
 const deleteAbout = async (req, res) => {

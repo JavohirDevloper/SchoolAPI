@@ -64,47 +64,64 @@ const getGalleryById = async (req, res) => {
 };
 
 const updateGallery = async (req, res) => {
-  const { id } = req.params;
-  try {
-    const oldGallery = await prisma.gallery.findUnique({
-      where: { id: Number(id) },
-    });
-
-    if (!oldGallery) {
-      return res.status(404).json({ error: "Gallery page not found" });
+  upload(req, res, async function (err) {
+    if (err) {
+      return res.status(500).json({ error: "Error uploading file" });
     }
 
-    const GalleryData = {
-      images: oldGallery.images,
-    };
+    const { id } = req.params;
 
-    if (req.file) {
-      const images = `gallery/${req.file.filename}`;
-      if (oldGallery.images) {
+    try {
+      // Fetch the existing gallery entry
+      const oldGallery = await prisma.gallery.findUnique({
+        where: { id: Number(id) },
+      });
+
+      if (!oldGallery) {
+        return res.status(404).json({ error: "Gallery not found" });
+      }
+
+      // Prepare the updated data
+      const galleryData = {
+        images: oldGallery.images, // default to old image
+      };
+
+      // If a new image is uploaded, update the image URL and delete the old one
+      if (req.file) {
+        const newImageUrl = `/gallery/${req.file.filename}`;
+
+        // Delete the old image if it exists
         const oldImagePath = path.join(
           __dirname,
           "../../public/gallery",
           path.basename(oldGallery.images)
         );
+
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
+
+        // Update the image URL
+        galleryData.images = newImageUrl;
       }
-      aboutData.images = images;
+
+      // Update the gallery in the database
+      const updatedGallery = await prisma.gallery.update({
+        where: { id: Number(id) },
+        data: galleryData,
+      });
+
+      res.json({
+        message: "Gallery updated successfully",
+        updatedGallery,
+      });
+    } catch (error) {
+      res.status(500).json({
+        error: "Error updating the gallery",
+        details: error.message,
+      });
     }
-
-    const updatedGallery = await prisma.gallery.update({
-      where: { id: Number(id) },
-      data: aboutData,
-    });
-
-    res.json({
-      message: "Gallery page updated successfully",
-      updatedGallery,
-    });
-  } catch (error) {
-    res.status(500).json({ error: "Error updating the Gallery page" });
-  }
+  });
 };
 
 const deleteGallery = async (req, res) => {
