@@ -8,24 +8,20 @@ const {
   loginAdmin,
   getAdminById,
   getAdmin,
+  updateAdminPassword,
 } = require("../controllers/admin.controller");
 const isLoggedIn = require("../shared/auth/isLoggedIn");
 const hasRole = require("../shared/auth/hasRole");
 
-const mRegisterAdmin = [isLoggedIn, hasRole(["admin"])];
-const mCreateAdmin = [isLoggedIn, hasRole(["admin"])];
-const mGetAllAdmins = [isLoggedIn, hasRole(["admin"])];
-const mGetByIdAdmin = [isLoggedIn, hasRole(["admin"])];
-const mUpdateAdmin = [isLoggedIn, hasRole(["admin"])];
-const mAdmin = [isLoggedIn, hasRole(["admin"])];
-const mDeleteAdmin = [isLoggedIn, hasRole(["admin"])];
+const mAdminCRUD = [isLoggedIn, hasRole(["admin"])];
 
 router.post("/admin/login", loginAdmin);
-router.post("/admin", mCreateAdmin, createAdmin);
-router.get("/admins", mGetAllAdmins, getAllAdmins);
-router.get("/admin", mAdmin, getAdmin);
-router.get("/admin/:id", mGetByIdAdmin, getAdminById);
-router.put("/admin/:id", mUpdateAdmin, updateAdmin);
-router.delete("/admin/:id", mDeleteAdmin, deleteAdmin);
+router.post("/admin", mAdminCRUD, createAdmin);
+router.get("/admins", mAdminCRUD, getAllAdmins);
+router.get("/admin", mAdminCRUD, getAdmin);
+router.get("/admin/:id", mAdminCRUD, getAdminById);
+router.put("/admin/:id", mAdminCRUD, updateAdmin);
+router.delete("/admin/:id", mAdminCRUD, deleteAdmin);
+router.put("/admin/password/me", mAdminCRUD, updateAdminPassword);
 
 module.exports = router;

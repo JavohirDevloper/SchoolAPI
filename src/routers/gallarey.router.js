@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-
 const isLoggedIn = require("../shared/auth/isLoggedIn");
 const hasRole = require("../shared/auth/hasRole");
+
 const {
   createGallery,
   getAllGallery,
