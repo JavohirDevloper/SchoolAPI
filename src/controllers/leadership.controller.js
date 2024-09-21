@@ -48,7 +48,6 @@ const createLeadership = async (req, res) => {
       });
       res.status(201).json(newLeadership);
     } catch (error) {
-      console.error("Error creating Leadership:", error);
       res.status(500).json({ error: "Error creating Leadership" });
     }
   });
