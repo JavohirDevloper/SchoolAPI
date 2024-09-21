@@ -73,7 +73,7 @@ const getCarouselById = async (req, res) => {
 const updateCarousel = async (req, res) => {
   upload(req, res, async function (err) {
     if (err) {
-      return res.status(500).json({ error: "Error uploading file" });
+      return res.status(500).json({ error: "Error uploading images" });
     }
 
     const { id } = req.params;
