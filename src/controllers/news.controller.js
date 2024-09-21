@@ -50,7 +50,11 @@ const createNews = async (req, res) => {
 
 const getAllNews = async (req, res) => {
   try {
-    const news = await prisma.news.findMany();
+    const news = await prisma.news.findMany({
+      include: {
+        comments: true,
+      },
+    });
     res.json(news);
   } catch (error) {
     res.status(500).json({ error: "Error fetching news" });
@@ -65,8 +69,11 @@ const getNewsByTitle = async (req, res) => {
       where: {
         title: {
           contains: title,
-          mode: "insensitive", // Case-insensitive search
+          mode: "insensitive",
         },
+      },
+      include: {
+        comments: true,
       },
     });
 

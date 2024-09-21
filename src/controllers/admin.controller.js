@@ -183,6 +183,59 @@ const deleteAdmin = async (req, res) => {
   }
 };
 
+const updateAdminPassword = async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  try {
+    // Validate input
+    const schema = Joi.object({
+      oldPassword: Joi.string().required(),
+      newPassword: Joi.string().min(6).required(),
+    });
+    const { error } = schema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ error: error.details[0].message });
+    }
+
+    // Get the current admin's ID from the token (req.user is set in middleware)
+    const adminId = req.user?.id;
+    if (!adminId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    // Find the admin by ID
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    // Verify the old password
+    const passwordMatch = await bcrypt.compare(oldPassword, admin.password);
+    if (!passwordMatch) {
+      return res.status(401).json({ error: "Incorrect old password" });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the password in the database
+    const updatedAdmin = await prisma.admin.update({
+      where: { id: adminId },
+      data: { password: hashedPassword },
+    });
+
+    res.status(200).json({
+      message: "Password updated successfully",
+      updatedAdmin,
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update password" });
+  }
+};
+
 module.exports = {
   loginAdmin,
   createAdmin,
@@ -191,4 +244,5 @@ module.exports = {
   getAdmin,
   updateAdmin,
   deleteAdmin,
+  updateAdminPassword,
 };
