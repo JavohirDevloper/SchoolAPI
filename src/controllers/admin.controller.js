@@ -13,17 +13,21 @@ const loginAdmin = async (req, res) => {
     if (!superAdmin) {
       return res.status(404).json({ message: "Admin not found" });
     }
+
     const passwordMatch = await bcrypt.compare(password, superAdmin.password);
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
     const token = jwt.sign(
-      { id: superAdmin.id, role: superAdmin.role },
-      process.env.JWT_SECRET,
       {
-        expiresIn: "1d",
-      }
+        id: superAdmin.id,
+        role: superAdmin.role,
+        tokenVersion: superAdmin.tokenVersion,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
+
     res.json({ token });
   } catch (error) {
     res.status(500).json(error);
@@ -187,7 +191,6 @@ const updateAdminPassword = async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
   try {
-    // Validate input
     const schema = Joi.object({
       oldPassword: Joi.string().required(),
       newPassword: Joi.string().min(6).required(),
@@ -197,13 +200,11 @@ const updateAdminPassword = async (req, res) => {
       return res.status(400).json({ error: error.details[0].message });
     }
 
-    // Get the current admin's ID from the token (req.user is set in middleware)
     const adminId = req.user?.id;
     if (!adminId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    // Find the admin by ID
     const admin = await prisma.admin.findUnique({
       where: { id: adminId },
     });
@@ -212,23 +213,22 @@ const updateAdminPassword = async (req, res) => {
       return res.status(404).json({ error: "Admin not found" });
     }
 
-    // Verify the old password
     const passwordMatch = await bcrypt.compare(oldPassword, admin.password);
     if (!passwordMatch) {
       return res.status(401).json({ error: "Incorrect old password" });
     }
-
-    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the password in the database
     const updatedAdmin = await prisma.admin.update({
       where: { id: adminId },
-      data: { password: hashedPassword },
+      data: {
+        password: hashedPassword,
+        tokenVersion: admin.tokenVersion + 1,
+      },
     });
 
     res.status(200).json({
-      message: "Password updated successfully",
+      message: "Password updated successfully. Please log in again.",
       updatedAdmin,
     });
   } catch (error) {

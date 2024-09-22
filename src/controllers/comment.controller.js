@@ -18,7 +18,6 @@ const createComment = async (req, res) => {
       return res.status(404).json({ error: "News item not found" });
     }
 
-    // Create a new comment linked to the specific news item
     const newComment = await prisma.comment.create({
       data: {
         message,

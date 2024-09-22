@@ -72,7 +72,6 @@ const updateGallery = async (req, res) => {
     const { id } = req.params;
 
     try {
-      // Fetch the existing gallery entry
       const oldGallery = await prisma.gallery.findUnique({
         where: { id: Number(id) },
       });
@@ -81,16 +80,11 @@ const updateGallery = async (req, res) => {
         return res.status(404).json({ error: "Gallery not found" });
       }
 
-      // Prepare the updated data
       const galleryData = {
-        images: oldGallery.images, // default to old image
+        images: oldGallery.images,
       };
-
-      // If a new image is uploaded, update the image URL and delete the old one
       if (req.file) {
         const newImageUrl = `/gallery/${req.file.filename}`;
-
-        // Delete the old image if it exists
         const oldImagePath = path.join(
           __dirname,
           "../../public/gallery",
@@ -100,12 +94,8 @@ const updateGallery = async (req, res) => {
         if (fs.existsSync(oldImagePath)) {
           fs.unlinkSync(oldImagePath);
         }
-
-        // Update the image URL
         galleryData.images = newImageUrl;
       }
-
-      // Update the gallery in the database
       const updatedGallery = await prisma.gallery.update({
         where: { id: Number(id) },
         data: galleryData,
